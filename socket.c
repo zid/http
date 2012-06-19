@@ -4,6 +4,17 @@
 #include <stdio.h>
 #include "socket.h"
 
+int socket_accept(int sock)
+{
+	struct sockaddr_storage addr;
+	socklen_t addr_size;
+	int fd;
+
+	fd = accept(sock, (struct sockaddr *)&addr, &addr_size);
+
+	return fd;
+}
+
 int socket_listen_create(const char *port)
 {
 	struct addrinfo hints, *info, *p;
