@@ -33,6 +33,12 @@ static int server_epoll_remove_fd(Server *s, int fd)
 {
 	int r;
 
+	if(fd == s->pollfd)
+	{
+		fprintf(stderr, "Fatal: You just removed the server fd from epoll you retard.\n");
+		return -1;
+	}
+
 	r = epoll_ctl(s->pollfd, EPOLL_CTL_DEL, fd, NULL);
 	if(r == -1)
 	{
@@ -65,13 +71,17 @@ static void server_read(Server *s, int fd)
 	n = socket_read(fd, buf, 4096);
 
 	if(n <= 0)
-	{
-		client_destroy(fd);
-		server_epoll_remove_fd(s, fd);
-		socket_close(fd);
-	}
+		goto kill;
 
-	client_read_data(fd, buf, n);
+	if(client_read_data(fd, buf, n))
+		goto kill;
+
+	return;
+
+	kill:
+	client_destroy(fd);
+	server_epoll_remove_fd(s, fd);
+	socket_close(fd);
 }
 
 Server *server_create(const char *port)

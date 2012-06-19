@@ -36,12 +36,23 @@ static int find_crlf(const char *buf, int len)
 
 /* A full line has been sent by the browser ready for us to do something 
  * with.  */
-static void client_parse(int fd)
+static int client_parse(int fd)
 {
-	printf("Client %d said '%s'\n", fd, c[fd].line);	
+	const char msg[] = "Arsebandits";
+
+//	printf("Client %d said '%s'\n", fd, c[fd].line);	
+
+	if(c[fd].line[0] == '\0')
+	{
+//		printf("Telling client to gtfo\n");
+		write(fd, msg, sizeof(msg)-1);
+		return 1;
+	}
+
+	return 0;
 }
 
-void client_read_data(int fd, char *buf, int n)
+int client_read_data(int fd, char *buf, int n)
 {
 	int bytes_to_copy;
 	int pos, overhang;
@@ -57,6 +68,8 @@ void client_read_data(int fd, char *buf, int n)
 
 	while(1)
 	{
+		int r;
+
 		pos = find_crlf(c[fd].line, c[fd].filled);
 
 		if(pos == -1)
@@ -64,17 +77,19 @@ void client_read_data(int fd, char *buf, int n)
 		if(c[fd].filled == MAX_LINE)
 			{
 				client_destroy(fd);
-				return;
+				return 1;
 			}
 
 			/* Buffer isn't full, but we haven't found crlf either */
-			return;
+			return 0;
 		}
 
 		/* We have found a crlf! */
 		/* Replace the \r\n with a terminator */
 		c[fd].line[pos] = '\0';
-		client_parse(fd);
+		r = client_parse(fd);
+		if(r)
+			return 1;
 
 		/* If we had any overhang past the line
 		 * move it to the start of the buffer here.
@@ -90,6 +105,8 @@ void client_read_data(int fd, char *buf, int n)
 		 * data with multiple lines in it.
 		 */
 	}
+
+	return 0;
 }
 
 void client_new(int fd)

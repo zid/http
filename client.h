@@ -3,5 +3,5 @@
 
 void client_new(int);
 void client_destroy(int);
-void client_read_data(int, char *, int);
+int client_read_data(int, char *, int);
 #endif
