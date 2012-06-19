@@ -2,7 +2,18 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "socket.h"
+
+void socket_close(int fd)
+{
+	close(fd);
+}
+
+int socket_read(int fd, char *buf, int len)
+{
+	return recv(fd, buf, len, 0);
+}
 
 int socket_accept(int sock)
 {

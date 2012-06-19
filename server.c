@@ -3,6 +3,7 @@
 #include <sys/epoll.h>
 #include "socket.h"
 #include "server.h"
+#include "client.h"
 
 struct server {
 	int sock;
@@ -16,11 +17,26 @@ static int server_epoll_add_fd(Server *s, int fd)
 	int r;
 
 	ev.events = EPOLLIN;
+	ev.data.fd = fd;
 	r = epoll_ctl(s->pollfd, EPOLL_CTL_ADD, fd, &ev);
 	if(r == -1)
 	{
-		fprintf(stderr, "Fatal: Couldn't add socket to epoll.\n");
+		fprintf(stderr, "Fatal: Couldn't add fd to epoll.\n");
 		server_destroy(s);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int server_epoll_remove_fd(Server *s, int fd)
+{
+	int r;
+
+	r = epoll_ctl(s->pollfd, EPOLL_CTL_DEL, fd, NULL);
+	if(r == -1)
+	{
+		fprintf(stderr, "Fatal: Couldn't remove fd from epoll.\n");
 		return -1;
 	}
 
@@ -32,10 +48,30 @@ static void server_accept(Server *s)
 	int fd;
 
 	fd = socket_accept(s->sock);
+
 	if(fd == -1)
 		return;
 
 	server_epoll_add_fd(s, fd);
+
+	client_new(fd);
+}
+
+static void server_read(Server *s, int fd)
+{
+	char buf[4096];
+	int n;
+
+	n = socket_read(fd, buf, 4096);
+
+	if(n <= 0)
+	{
+		client_destroy(fd);
+		server_epoll_remove_fd(s, fd);
+		socket_close(fd);
+	}
+
+	client_read_data(fd, buf, n);
 }
 
 Server *server_create(const char *port)
@@ -78,11 +114,13 @@ int server_do(Server *s)
 
 	for(n = 0; n < nfds; n++)
 	{
-		if(ev[n].data.fd == s->sock)
+		int fd = ev[n].data.fd;
+
+		if(fd == s->sock)
 		{
 			server_accept(s);
 		} else {
-			/* server_read_fd() */
+			server_read(s, fd);
 		}
 
 	}
