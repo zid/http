@@ -20,7 +20,7 @@ int socket_accept(int sock)
 	struct sockaddr_storage addr;
 	socklen_t addr_size;
 	int fd;
-
+	addr_size = sizeof(addr);
 	fd = accept(sock, (struct sockaddr *)&addr, &addr_size);
 
 	return fd;
