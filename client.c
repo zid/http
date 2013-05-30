@@ -111,7 +111,7 @@ int client_read_data(int fd, char *buf, int n)
 
 int client_new(int fd)
 {
-	if(fd > 256)
+	if(fd >= 256)
 	{
 		fprintf(stderr, "Warn: Too many connections.\n");
 		socket_close(fd);
