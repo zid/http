@@ -98,7 +98,7 @@ int client_read_data(int fd, char *buf, int n)
 		if(overhang == 0)
 			break;
 
-		memcpy(c[fd].line, &c[fd].line[pos+2], overhang);
+		memmove(c[fd].line, &c[fd].line[pos+2], overhang);
 		c[fd].filled = overhang;
 
 		/* Go and search for clrf again, to see if we read
@@ -109,13 +109,13 @@ int client_read_data(int fd, char *buf, int n)
 	return 0;
 }
 
-void client_new(int fd)
+int client_new(int fd)
 {
 	if(fd > 256)
 	{
 		fprintf(stderr, "Warn: Too many connections.\n");
 		socket_close(fd);
-		return;
+		return 0;
 	}
 
 	if(c[fd].active == 1)
@@ -128,5 +128,7 @@ void client_new(int fd)
 	c[fd].filled  = 0;
 	c[fd].line    = malloc(MAX_LINE);
 	c[fd].line[0] = '\0';
+
+	return 1;
 }
 

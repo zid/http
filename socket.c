@@ -45,7 +45,7 @@ int socket_listen_create(const char *port)
 
 	for(p = info; p; p = p->ai_next)
 	{
-		int yes;
+		int yes = 1;
 
 		sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
 		if(sock == -1)

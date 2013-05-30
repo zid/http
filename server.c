@@ -13,7 +13,7 @@ struct server {
 /* Register a file descriptor with epoll */
 static int server_epoll_add_fd(Server *s, int fd)
 {
-	struct epoll_event ev;
+	struct epoll_event ev = {0};
 	int r;
 
 	ev.events = EPOLLIN;
@@ -25,7 +25,7 @@ static int server_epoll_add_fd(Server *s, int fd)
 		server_destroy(s);
 		return -1;
 	}
-
+	/* TODO: Do something with ev? */
 	return 0;
 }
 
@@ -58,9 +58,10 @@ static void server_accept(Server *s)
 	if(fd == -1)
 		return;
 
-	server_epoll_add_fd(s, fd);
+	if(!client_new(fd))
+		return;	/* Too many clients */
 
-	client_new(fd);
+	server_epoll_add_fd(s, fd);
 }
 
 static void server_read(Server *s, int fd)
