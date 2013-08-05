@@ -141,6 +141,7 @@ int server_do(Server *s)
 
 void server_destroy(Server *s)
 {
+	close(s->pollfd);
 	free(s);
 }
 
